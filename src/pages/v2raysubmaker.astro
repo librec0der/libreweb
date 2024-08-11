@@ -1,0 +1,120 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="v2ray subscription generator">
+    <main class="flex justify-center p-10 space-y-5 space-x-5 items-center flex-col">
+        <h1 class="text-2xl md:text-3xl lg:text-4xl text-center">
+            V2ray subscription generator
+        </h1>
+        <div class="container">
+            <div class="label">
+                <span class="label-text">One v2ray per line...</span>
+            </div>
+            <textarea
+                class="textarea textarea-primary w-full h-48"
+                placeholder="One v2ray per line..."></textarea>
+
+            <div class="label">
+                <span class="label-text">Filename (without extension)</span>
+            </div>
+            <input
+                type="text"
+                class="input input-primary w-full"
+                placeholder="Filename (without extension)"
+            />
+            <button class="btn btn-primary w-full" onclick="saveAsBinFile()">
+                Save as file
+            </button>
+
+            <div class="label mt-8">
+                <span class="label-text">Paste your file's Google Drive link</span>
+            </div>
+            <input
+                type="text"
+                id="google-link"
+                class="input input-primary w-full"
+                placeholder="Paste your Google Drive link here"
+                oninput="convertLink()"
+            />
+
+            <div class="label">
+                <span class="label-text">Your Direct link</span>
+            </div>
+            <input
+                type="text"
+                id="direct-link"
+                class="input input-primary w-full"
+                readonly
+            />
+
+            <button
+                id="copy-button"
+                class="btn btn-primary w-full"
+                onclick="copyLink()"
+                disabled>Copy Direct Link</button>
+        </div>
+
+        <script is:inline>
+            function saveAsBinFile() {
+                // Get the textarea content
+                const textarea = document.querySelector(".textarea");
+                const uris = textarea.value.split("\n");
+
+                // Encode each line in base64
+                const encodedUris = uris.map((uri) => btoa(uri));
+
+                // Combine encoded URIs into a single string
+                const encodedContent = encodedUris.join("\n");
+
+                // Convert the string to a Blob
+                const blob = new Blob([encodedContent], {
+                    type: "application/octet-stream",
+                });
+
+                // Get the filename from input
+                const filenameInput = document.querySelector(".input");
+                let filename = filenameInput.value.trim();
+                if (!filename) {
+                    filename = "download"; // Default filename if none provided
+                }
+
+                // Create a link element for downloading the file
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+
+                // Trigger the download and clean up
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+
+            function convertLink() {
+                const googleLinkInput = document.getElementById("google-link");
+                const directLinkInput = document.getElementById("direct-link");
+                const copyButton = document.getElementById("copy-button");
+                const googleLink = googleLinkInput.value.trim();
+
+                const regex =
+                    /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view\?usp=sharing|https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)\/edit\?usp=drive_link/;
+                const match = googleLink.match(regex);
+
+                if (match) {
+                    const fileId = match[1] || match[2];
+                    const directLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    directLinkInput.value = directLink;
+                    copyButton.disabled = false;
+                } else {
+                    directLinkInput.value = "";
+                    copyButton.disabled = true;
+                }
+            }
+
+            function copyLink() {
+                const directLinkInput = document.getElementById("direct-link");
+                directLinkInput.select();
+                document.execCommand("copy");
+            }
+        </script>
+    </main>
+</Layout>
